@@ -1,0 +1,45 @@
+package com.NatwestReportGen.reportGeneratorCsv.Controller;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.batch.core.Job;
+import org.springframework.batch.core.JobParameters;
+import org.springframework.batch.core.JobParametersBuilder;
+import org.springframework.batch.core.JobParametersInvalidException;
+import org.springframework.batch.core.launch.JobLauncher;
+import org.springframework.batch.core.repository.JobExecutionAlreadyRunningException;
+import org.springframework.batch.core.repository.JobInstanceAlreadyCompleteException;
+import org.springframework.batch.core.repository.JobRestartException;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+@RestController
+public class InputController {
+    Logger logger= LoggerFactory.getLogger(InputController.class);
+    @Autowired
+    private JobLauncher jobLauncher;
+    @Autowired
+    private Job job;
+
+    @PostMapping("/generateReport")
+    public ResponseEntity<?> inputToOutputReportGenerator() {
+        logger.info("API called for report generator---------------------------------");
+        JobParameters jobParameters = new JobParametersBuilder()
+                .addLong("startAt", System.currentTimeMillis()).toJobParameters();
+        try {
+            jobLauncher.run(job, jobParameters);
+            logger.info("Job run using API done--------------------------------------------");
+            return new ResponseEntity<>(HttpStatus.ACCEPTED);
+        } catch (JobExecutionAlreadyRunningException
+                 | JobRestartException
+                 | JobInstanceAlreadyCompleteException
+                 | JobParametersInvalidException e) {
+            e.getMessage();
+            logger.error("Report generation failed using API---------------------------------------");
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        }
+    }
+}
